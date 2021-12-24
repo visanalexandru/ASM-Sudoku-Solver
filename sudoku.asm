@@ -12,6 +12,10 @@
 
 	process_int_format: .asciz "%d " # Format to read/write int 
 
+	# For each line and column (0-8), mark used numbers (1-9). So used_line[line][number] is 1 if the given number
+	# appears on the given line, and used_column[column][number] is 1 if the given number appears on the given column
+	used_line: .space 90 
+	used_column: .space 90
 
 .text
 	.global main
@@ -134,3 +138,26 @@
 		pop %ebp # Restore ebp
 		ret
 
+	# This function receives an index as a parameter and 
+	# returns the corresponding line and column of the index through eax and ecx
+	line_and_column:  
+		# Create the stack frame
+		push %ebp
+		mov %esp, %ebp
+		
+
+		mov 8(%ebp), %eax # Move the parameter into eax
+		xor %edx, %edx # Set edx to zero
+
+		# To get the line, divide the index by 9.
+		# The column will be the remainder of the division
+		
+		mov $9, %ecx # Set ecx to 9, as we will divide by ecx
+		div %ecx 
+
+		# Now the line is in eax and column in edx. Move the column number to ecx
+		mov %edx, %ecx
+		
+		# Delete the stack frame
+		pop %ebp
+		ret
