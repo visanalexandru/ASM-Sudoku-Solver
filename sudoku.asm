@@ -161,3 +161,47 @@
 		# Delete the stack frame
 		pop %ebp
 		ret
+	
+	# This function receives an index as a paramter and returns the corresponding square
+	# the index cell is situated in through eax.
+	square:
+		# Create the stack frame
+		push %ebp
+		mov %esp, %ebp
+		
+		push $0 # Square row auxiliary variable
+		push $0 # Square column auxiliary variable
+	
+
+		# Compute the row of the square, divide the index by 27
+		mov 8(%ebp), %eax # Move the index into eax
+		xor %edx, %edx # Set edx to zero
+		mov $27, %ecx # Divide by 27 
+		div %ecx
+		mov %eax, -4(%ebp) # Set the square row auxiliary variable
+
+		# Compute the column of the square, (index/3)%3 
+		mov 8(%ebp), %eax # Move the index into eax
+		xor %edx, %edx # Set edx to zero
+		mov $3, %ecx # Divide by 3 
+		div %ecx
+		# Now get the remainder to the division with 3
+		xor %edx, %edx
+		div %ecx
+			
+		mov %edx, -8(%ebp) # The remainder is in edx, set the square column auxiliary variable 
+
+		# Now the square number is square_row*3+square_column
+
+		mov -4(%ebp), %eax
+		add -4(%ebp), %eax
+		add -4(%ebp), %eax
+		add -8(%ebp), %eax
+
+		# Delete the stack frame
+		pop %ecx # Pop row auxiliary variable
+		pop %ecx # Pop column auxiliary variable
+		pop %ebp
+		ret
+
+
