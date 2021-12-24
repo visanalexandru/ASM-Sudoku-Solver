@@ -10,7 +10,7 @@
 	read_mode: .asciz "r" # "read" mode identificator
 	write_mode: .asciz "w" # "write" mode identificator
 
-	read_int_format: .asciz "%d" # Format to read int 
+	process_int_format: .asciz "%d " # Format to read/write int 
 
 
 .text
@@ -54,7 +54,7 @@
 			push %ecx # Store ecx
 
 			push %eax # The address of the cell to read
-			push $read_int_format # Format to read an integer
+			push $process_int_format # Format to read an integer
 			push file_in # Pointer to the input file
 			call fscanf
 			pop %ecx
