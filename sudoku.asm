@@ -18,6 +18,7 @@
 
 	main:
 		call read_grid	
+		call output_grid
 
 		et_exit: # Program ends here
 			mov $1, %eax
@@ -34,7 +35,7 @@
 
 
 		push $read_mode # Open the file in the read mode 
-		push $filename_in
+		push $filename_in # The path to the file
 		call fopen # The file pointer is returned through eax
 		pop %ecx
 		pop %ecx
@@ -68,6 +69,11 @@
 			jmp et_read_loop
 
 		et_read_loop_end:
+
+		# Close the input file
+		push file_in
+		call fclose 
+		pop %eax
 		
 		# Delete the stack frame
 		pop %edi # Restore edi
@@ -75,4 +81,56 @@
 		ret
 
 
+	output_grid: # This function outputs the solved grid to the file named "sudoku.out"
+
+		# Create the stack frame
+		push %ebp # Store ebp
+		mov %esp, %ebp
+		push %edi # We modify edi so we store it first. 
+
+
+		push $write_mode # Open the file in the write mode 
+		push $filename_out # The path to the file
+		call fopen # The file pointer is returned through eax
+		pop %ecx
+		pop %ecx
+
+		mov %eax, file_out # Set the output file pointer		
+		
+
+		lea grid, %edi # Edi now points to the grid
+		xor %ecx, %ecx 	# Set ecx to zero, use it as an index in the grid 
+
+		et_output_loop:
+			cmp $81, %ecx # Check if ecx has reached the end
+			je et_output_loop_end
+
+			
+			push %ecx # Store ecx
+
+			pushl (%edi, %ecx, 4) # The value of the cell to output 
+			push $process_int_format # Format to write an integer
+			push file_out # Pointer to the input file
+			call fprintf
+			pop %ecx
+			pop %ecx
+			pop %ecx
+
+			pop %ecx # Restore ecx
+
+			inc %ecx
+			jmp et_output_loop
+
+		et_output_loop_end:
+		
+		# Close the output file
+		push file_out 
+		call fclose
+		pop %eax
+
+		
+		# Delete the stack frame
+		pop %edi # Restore edi
+		pop %ebp # Restore ebp
+		ret
 
