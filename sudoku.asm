@@ -12,6 +12,8 @@
 
 	process_int_format: .asciz "%d " # Format to read/write int 
 
+	endline_format: .asciz "\n" # Format to print endline
+
 	# For each line, column and square (0-8), mark used numbers (1-9). So used_line[line][number] is 1 if the given number
 	# appears on the given line, used_column[column][number] is 1 if the given number appears on the given column,
 	# and used_square[square][number] is 1 if the given number appears on the given square.
@@ -121,7 +123,7 @@
 
 			pushl (%edi, %ecx, 4) # The value of the cell to output 
 			push $process_int_format # Format to write an integer
-			push file_out # Pointer to the input file
+			push file_out # Pointer to the output file
 			call fprintf
 			pop %ecx
 			pop %ecx
@@ -129,6 +131,25 @@
 
 			pop %ecx # Restore ecx
 
+			# If we have reached the end of a column, print endline
+			push %ecx # Call the line_and column function to get the current column 
+			call line_and_column
+			mov %ecx, %eax # The current column is in ecx, move it into eax		
+			pop %ecx # Restore ecx
+
+			cmp $8, %eax # Check if we have reached the end of a column 
+			jne et_output_next
+				
+			# We have reached the end of a column, print endline
+			push %ecx  # Store ecx
+			push $endline_format # Format to print endline
+			push file_out # Pointer to the output file
+			call fprintf
+			pop %ecx
+			pop %ecx
+			pop %ecx # Restore ecx
+
+			et_output_next:	
 			inc %ecx
 			jmp et_output_loop
 
