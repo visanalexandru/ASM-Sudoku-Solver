@@ -4,8 +4,9 @@
 	file_in: .space 4 # The file pointer for the input file 
 	file_out: .space 4 # The file pointer for the output file 
 
-	filename_in: .asciz "sudoku.in" # The file name for the input file
-	filename_out: .asciz "sudoku.out" # The file name for the output file
+	filename_in: .space 4 # A pointer to the file name for the input file
+	filename_out: .space 4 # A pointer to the file name for the output file
+	usage: .asciz "usage: sudoku (input_file) (output_file) \n" # Error message for an incorrect number of parameters
 
 	read_mode: .asciz "r" # "read" mode identificator
 	write_mode: .asciz "w" # "write" mode identificator
@@ -25,13 +26,33 @@
 	.global main
 
 	main:
-		call read_grid 
+		mov 4(%esp), %eax # Put the number of command line parameters into eax
+		cmp $3, %eax # Check if we have 2 command line parameters (2+the path to the executable)
+		jne et_incorrect
 
-		push $0 # Solve from index 0, meaning from the start of the grid
-		call solve
-		pop %ecx # Pop the parameter
+		et_correct: # The user has provided all the parameters 
+			mov 8(%esp), %eax # Move the argument pointer to eax	
 
-		call output_grid
+			movl 4(%eax), %ecx
+			movl %ecx, filename_in # Set filename_in to the first char* in the param list
+
+			movl 8(%eax), %ecx 
+			movl %ecx, filename_out # Set filename_out to the second char* in the param list
+
+			call read_grid 
+
+			push $0 # Solve from index 0, meaning from the start of the grid
+			call solve
+			pop %ecx # Pop the parameter
+
+			call output_grid # Output the grid
+			jmp et_exit
+		
+		et_incorrect: # Incorrect number of parameters
+			push $usage
+			call printf
+			pop %ecx
+			jmp et_exit
 
 		et_exit: # Program ends here
 			mov $1, %eax
@@ -52,7 +73,7 @@
 
 
 		push $read_mode # Open the file in the read mode 
-		push $filename_in # The path to the file
+		push filename_in # The path to the file
 		call fopen # The file pointer is returned through eax
 		pop %ecx
 		pop %ecx
@@ -158,7 +179,7 @@
 
 
 		push $write_mode # Open the file in the write mode 
-		push $filename_out # The path to the file
+		push filename_out # The path to the file
 		call fopen # The file pointer is returned through eax
 		pop %ecx
 		pop %ecx
@@ -471,8 +492,4 @@
 			pop %edi # Restore edi
 			pop %ebp
 			ret
-
-
-
-
 
