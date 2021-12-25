@@ -45,6 +45,10 @@
 		push %ebp # Store ebp
 		mov %esp, %ebp
 		push %edi # We modify edi so we store it first. 
+		push $0 # The line of the current cell to read
+		push $0 # The column of the current cell to read
+		push $0 # The square of the current cell to read
+		push $0 # The current number that has been read
 
 
 		push $read_mode # Open the file in the read mode 
@@ -55,14 +59,12 @@
 
 		mov %eax, file_in # Set the input file pointer		
 		
-
-		lea grid, %edi # Edi now points to the grid
 		xor %ecx, %ecx 	# Set ecx to zero, use it as an index in the grid 
-
 		et_read_loop:
 			cmp $81, %ecx # Check if ecx has reached the end
 			je et_read_loop_end
 
+			lea grid, %edi # Edi now points to the grid
 			lea (%edi, %ecx, 4), %eax # Load the pointer to the element to read in eax
 			
 			push %ecx # Store ecx
@@ -74,10 +76,59 @@
 			pop %ecx
 			pop %ecx
 			pop %ecx
-			
 
 			pop %ecx # Restore ecx
+			
+			mov (%edi, %ecx, 4), %eax # Eax now holds the current number
+			mov %eax, -20(%ebp) # Set the current number local variable 
 
+			# We now need to update the used_line, used_column and used_square tables accordingly
+			# First compute the line and column of the current index
+			push %ecx # Store ecx
+			call line_and_column
+			mov %eax, -8(%ebp) # Set the line local variable
+			mov %ecx, -12(%ebp) # Set the column local variable
+			pop %ecx # Restore ecx
+
+			# Then compute the square of the current index
+			push %ecx # Store ecx
+			call square
+			mov %eax, -16(%ebp) # Set the square local variable
+			pop %ecx # Restore ecx
+			
+			push %ecx # Store ecx
+
+			# Update used_line[line*10+number]
+			et_read_update_line:
+				xor %edx, %edx # Set edx to zero
+				mov -8(%ebp), %eax # Eax now holds the current line
+				mov $10, %ecx # Set ecx to 10 as we will multiply eax by 10
+				mul %ecx # eax now holds line*10
+				add -20(%ebp), %eax # add the current number to eax, eax now holds line*10+number
+				lea used_line, %edi
+				movb $1, (%edi, %eax, 1) # Set used_line[line*10+number] to 1 
+
+			# Update used_column[column*10+number]
+			et_read_update_column:
+				xor %edx, %edx # Set edx to zero
+				mov -12(%ebp), %eax # Eax now holds the current column 
+				mov $10, %ecx # Set ecx to 10 as we will multiply eax by 10
+				mul %ecx # eax now holds column*10
+				add -20(%ebp), %eax # add the current number to eax, eax now holds column*10+number
+				lea used_column, %edi
+				movb $1, (%edi, %eax, 1) # Set used_column[column*10+number] to 1 
+			
+			# Update used_square[square*10+number]
+			et_read_update_square:
+				xor %edx, %edx # Set edx to zero
+				mov -16(%ebp), %eax # Eax now holds the current square 
+				mov $10, %ecx # Set ecx to 10 as we will multiply eax by 10
+				mul %ecx # eax now holds square*10
+				add -20(%ebp), %eax # add the current number to eax, eax now holds square*10+number
+				lea used_square, %edi
+				movb $1, (%edi, %eax, 1) # Set used_square[column*10+number] to 1 
+
+			pop %ecx # Restore ecx
 			inc %ecx
 			jmp et_read_loop
 
@@ -89,6 +140,10 @@
 		pop %eax
 		
 		# Delete the stack frame
+		pop %ecx # Pop the current number
+		pop %ecx # Pop the square of the current cell
+		pop %ecx # Pop the column of the current cell
+		pop %ecx # Pop the line of the current cell
 		pop %edi # Restore edi
 		pop %ebp # Restore ebp
 		ret
